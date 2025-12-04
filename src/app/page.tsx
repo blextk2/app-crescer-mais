@@ -20,30 +20,52 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
     
     // Verificar se usuário está logado
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const userData = localStorage.getItem('user');
-    
-    if (loggedIn && userData) {
-      setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
-    } else {
-      // Se não estiver logado, redirecionar para login
-      router.push('/login');
+    try {
+      const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+      const userData = localStorage.getItem('user');
+      
+      if (loggedIn && userData) {
+        setIsLoggedIn(true);
+        setUser(JSON.parse(userData));
+      }
+    } catch (error) {
+      console.error('Erro ao verificar login:', error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  if (!mounted || !isLoggedIn) {
+  // Redirecionar apenas após montar no cliente
+  useEffect(() => {
+    if (mounted && !isLoading && !isLoggedIn) {
+      router.push('/login');
+    }
+  }, [mounted, isLoading, isLoggedIn, router]);
+
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Redirecionando...</p>
         </div>
       </div>
     );
@@ -58,10 +80,10 @@ export default function HomePage() {
         {/* Boas-vindas */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            Olá, {user?.nome}! 👋
+            Olá, {user?.nome || 'Usuário'}! 👋
           </h1>
           <p className="text-gray-600 text-lg">
-            Veja como está o desenvolvimento de {user?.nomeBebe}
+            Veja como está o desenvolvimento de {user?.nomeBebe || 'seu bebê'}
           </p>
         </div>
 
